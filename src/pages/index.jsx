@@ -11,20 +11,13 @@ import {
   getDocs,
   onSnapshot,
   addDoc,
-  Timestamp,
+  query,
+  orderBy,
+  limit,
+  Timestamp 
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { FirebaseError } from "firebase/app";
-
-// function sendMessage(e) {
-//   e.preventDefault();
-
-//   db.collection("posts").add({
-//     text: message,
-//     title,
-//     timestamp: FirebaseError.firestore.FieldValue.serverTimestamp(),
-//   });
-// }
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -36,49 +29,41 @@ export default function Home() {
   useEffect(() => {
     // データベースからデータを取得する
     const postData = collection(db, "posts");
-    getDocs(postData).then((snapShot) => {
+    const q = query(postData, orderBy("createdAt"));
+    getDocs(q).then((snapShot) => {
       // console.log(snapShot.docs.map((doc) => ({ ...doc.data() })));
       setPosts(snapShot.docs.map((doc) => ({ ...doc.data() })));
-
-    
     });
-    
 
     // リアルタイムで取得
-    onSnapshot(postData, (post) => {
-      setPosts(post.docs.map((doc) => ({ ...doc.data() })));
+    onSnapshot(postData, (querySnapshot) => {
+      setPosts(querySnapshot.docs.map((doc) => ({ ...doc.data() })));
     });
-    
-  }, []);
-  
+  }, [db]);
   
   // firebaseに書き込む
   function sendMessage(e) {
     e.preventDefault();
     try {
       addDoc(collection(db, "posts"), {
-        title: name,
-        text: message,
+        title: message,
         createdAt: Timestamp.fromDate(new Date()),
       });
     } catch (error) {
       console.log(error);
     }
-    
   }
-  
   
   const handleChange = (e) => {
     setText(e.target.value.trim());
   };
-
   return (
     <div className={styles.container}>
       <Header />
       {posts.map((post) => (
         <div key={uuidv4()}>
-          <h1>{post.title}</h1>
-          <p>{post.text}</p>
+          <p>{post.title}</p>
+          <h1>{post.text}</h1>
         </div>
       ))}
       <form onSubmit={sendMessage}>
@@ -94,4 +79,5 @@ export default function Home() {
       <Footer />
     </div>
   );
+
 }
